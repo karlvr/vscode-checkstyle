@@ -26,6 +26,7 @@ export enum FixableCheck {
 
     // Whitespace
     ParenPadCheck = 'ParenPadCheck',
+    WhitespaceAfterCheck = 'WhitespaceAfterCheck',
 
     // Misc
     FinalParametersCheck = 'FinalParametersCheck',
