@@ -24,7 +24,7 @@ import org.eclipse.jface.text.IRegion;
 
 import java.util.List;
 
-public abstract class BaseQuickFix {
+public abstract class BaseQuickFix implements IQuickFix {
     public abstract ASTVisitor getCorrectingASTVisitor(IRegion lineInfo, int markerStartOffset);
 
     /**

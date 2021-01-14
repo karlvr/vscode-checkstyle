@@ -36,6 +36,7 @@ import com.shengchen.checkstyle.quickfix.misc.UpperEllQuickFix;
 import com.shengchen.checkstyle.quickfix.modifier.ModifierOrderQuickFix;
 import com.shengchen.checkstyle.quickfix.modifier.RedundantModifierQuickFix;
 import com.shengchen.checkstyle.quickfix.utils.EditUtils;
+import com.shengchen.checkstyle.quickfix.whitepace.ParenPadQuickFix;
 import com.shengchen.checkstyle.runner.api.IQuickFixService;
 
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -55,7 +56,7 @@ import java.util.Map;
 
 public class QuickFixService implements IQuickFixService {
 
-    private final Map<String, BaseQuickFix> quickFixMap;
+    private final Map<String, IQuickFix> quickFixMap;
 
     public QuickFixService() {
         quickFixMap = new HashMap<>();
@@ -77,9 +78,10 @@ public class QuickFixService implements IQuickFixService {
         quickFixMap.put(FixableCheck.ARRAY_TYPE_STYLE_CHECK.toString(), new ArrayTypeStyleQuickFix());
         quickFixMap.put(FixableCheck.SIMPLIFY_BOOLEAN_RETURN_CHECK.toString(), new SimplifyBooleanReturnQuickFix());
         quickFixMap.put(FixableCheck.STRING_LITERAL_EQUALITY.toString(), new StringLiteralEqualityQuickFix());
+        quickFixMap.put(FixableCheck.PAREN_PAD_CHECK.toString(), new ParenPadQuickFix());
     }
 
-    public BaseQuickFix getQuickFix(String sourceName) {
+    public IQuickFix getQuickFix(String sourceName) {
         return quickFixMap.get(sourceName);
     }
 
@@ -88,20 +90,32 @@ public class QuickFixService implements IQuickFixService {
         Double offset,
         String sourceName
     ) throws JavaModelException, IllegalArgumentException, BadLocationException {
-        final BaseQuickFix quickFix = getQuickFix(sourceName);
+        final IQuickFix quickFix = getQuickFix(sourceName);
         if (quickFix == null) {
             throw new RuntimeException("Unsupported quick fix.");
         }
         final ICompilationUnit unit = JDTUtils.resolveCompilationUnit(fileToCheckUri);
         final Document document = new Document(unit.getSource());
         final IRegion lineInfo = document.getLineInformationOfOffset(offset.intValue());
-        final ASTParser astParser = ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
-        astParser.setKind(ASTParser.K_COMPILATION_UNIT);
-        astParser.setSource(unit);
-        final CompilationUnit astRoot = (CompilationUnit) astParser.createAST(null);
-        astRoot.recordModifications();
-        astRoot.accept(quickFix.getCorrectingASTVisitor(lineInfo, offset.intValue()));
-        final TextEdit edit = astRoot.rewrite(document, null);
-        return EditUtils.convertToWorkspaceEdit(unit, edit);
+
+        if (quickFix instanceof BaseQuickFix) {
+            final ASTParser astParser = ASTParser.newParser(IASTSharedValues.SHARED_AST_LEVEL);
+            astParser.setKind(ASTParser.K_COMPILATION_UNIT);
+            astParser.setSource(unit);
+            final CompilationUnit astRoot = (CompilationUnit) astParser.createAST(null);
+            astRoot.recordModifications();
+            astRoot.accept(((BaseQuickFix) quickFix).getCorrectingASTVisitor(lineInfo, offset.intValue()));
+            final TextEdit edit = astRoot.rewrite(document, null);
+            return EditUtils.convertToWorkspaceEdit(unit, edit);
+        } else if (quickFix instanceof BaseEditQuickFix) {
+            final TextEdit edit = ((BaseEditQuickFix) quickFix).createTextEdit(lineInfo, offset.intValue(), document);
+            if (edit != null) {
+                return EditUtils.convertToWorkspaceEdit(unit, edit);
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
     }
 }
