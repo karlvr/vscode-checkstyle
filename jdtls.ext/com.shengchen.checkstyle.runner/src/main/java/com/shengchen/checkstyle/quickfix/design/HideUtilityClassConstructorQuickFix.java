@@ -55,6 +55,8 @@ public class HideUtilityClassConstructorQuickFix extends BaseQuickFix {
                     } else {
                         /* Make a new private constructor */
                         final MethodDeclaration constructor = node.getAST().newMethodDeclaration();
+                        /* We need to set source range for our text edits, but we can't put anything sensible */
+                        constructor.setSourceRange(0, 0);
                         constructor.setConstructor(true);
                         constructor.setName(copy(node.getName()));
                         final Modifier privateModifier = node.getAST().newModifier(ModifierKeyword.PRIVATE_KEYWORD);
@@ -94,14 +96,9 @@ public class HideUtilityClassConstructorQuickFix extends BaseQuickFix {
             return false;
         }
 
-        for (final Modifier modifier : ((List<Modifier>) method.modifiers())) {
-            if (modifier.isPrivate()) {
-                return false;
-            } else if (modifier.isPublic()) {
-                return true;
-            } else if (modifier.isProtected()) {
-                return false;
-            }
+        final int modifiers = method.getModifiers();
+        if (Modifier.isPrivate(modifiers) || Modifier.isProtected(modifiers)) {
+            return false;
         }
         return true;
     }
