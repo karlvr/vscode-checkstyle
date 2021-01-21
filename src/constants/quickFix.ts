@@ -20,6 +20,7 @@ export enum FixableCheck {
     // Design
     DesignForExtensionCheck = 'DesignForExtensionCheck',
     FinalClassCheck = 'FinalClassCheck',
+    HideUtilityClassConstructorCheck = 'HideUtilityClassConstructorCheck',
 
     // Modifier
     ModifierOrderCheck = 'ModifierOrderCheck',
