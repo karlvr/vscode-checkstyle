@@ -30,6 +30,7 @@ import com.shengchen.checkstyle.quickfix.coding.SimplifyBooleanReturnQuickFix;
 import com.shengchen.checkstyle.quickfix.coding.StringLiteralEqualityQuickFix;
 import com.shengchen.checkstyle.quickfix.design.DesignForExtensionQuickFix;
 import com.shengchen.checkstyle.quickfix.design.FinalClassQuickFix;
+import com.shengchen.checkstyle.quickfix.design.HideUtilityClassConstructorQuickFix;
 import com.shengchen.checkstyle.quickfix.misc.ArrayTypeStyleQuickFix;
 import com.shengchen.checkstyle.quickfix.misc.FinalParametersQuickFix;
 import com.shengchen.checkstyle.quickfix.misc.UncommentedMainQuickFix;
@@ -78,6 +79,8 @@ public class QuickFixService implements IQuickFixService {
         quickFixMap.put(FixableCheck.AVOID_NESTED_BLOCKS_CHECK.toString(), new AvoidNestedBlocksQuickFix());
         quickFixMap.put(FixableCheck.DESIGN_FOR_EXTENSION_CHECK.toString(), new DesignForExtensionQuickFix());
         quickFixMap.put(FixableCheck.FINAL_CLASS_CHECK.toString(), new FinalClassQuickFix());
+        quickFixMap.put(FixableCheck.HIDE_UTILITY_CLASS_CONSTRUCTOR_CHECK.toString(),
+            new HideUtilityClassConstructorQuickFix());
         quickFixMap.put(FixableCheck.DEFAULT_COMES_LAST_CHECK.toString(), new DefaultComesLastQuickFix());
         quickFixMap.put(FixableCheck.EMPTY_STATEMENT_CHECK.toString(), new EmptyStatementQuickFix());
         quickFixMap.put(FixableCheck.MISSING_SWITCH_DEFAULT_CHECK.toString(), new MissingSwitchDefaultQuickFix());

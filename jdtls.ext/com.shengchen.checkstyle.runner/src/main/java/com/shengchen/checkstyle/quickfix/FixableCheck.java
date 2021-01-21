@@ -30,6 +30,7 @@ public enum FixableCheck {
 
     // Design
     DESIGN_FOR_EXTENSION_CHECK("DesignForExtensionCheck"), FINAL_CLASS_CHECK("FinalClassCheck"),
+    HIDE_UTILITY_CLASS_CONSTRUCTOR_CHECK("HideUtilityClassConstructorCheck"),
 
     // Modifier
     MODIFIER_ORDER_CHECK("ModifierOrderCheck"), REDUNDANT_MODIFIER_CHECK("RedundantModifierCheck"),
