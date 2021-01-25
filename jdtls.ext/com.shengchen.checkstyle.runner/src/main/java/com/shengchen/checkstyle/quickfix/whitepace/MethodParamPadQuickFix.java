@@ -22,18 +22,29 @@ import com.shengchen.checkstyle.quickfix.BaseEditQuickFix;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.TextEdit;
 
-public class NewlineAtEndOfFileQuickFix extends BaseEditQuickFix {
+/**
+ * Quick fix for
+ * https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/checks/whitespace/MethodParamPadCheck.html
+ */
+public class MethodParamPadQuickFix extends BaseEditQuickFix {
 
     @Override
     public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, String violationKey, Document doc) {
         try {
-            final String lastChar = doc.getLength() > 0 ? doc.get(doc.getLength() - 1, 1) : "";
+            final int fromStartOfLine = markerStartOffset - lineInfo.getOffset();
+            final String string = doc.get(lineInfo.getOffset(), lineInfo.getLength());
             
-            if (lastChar.isEmpty() || !"\n".equals(lastChar)) {
-                return new InsertEdit(doc.getLength(), "\n");
+            if ("ws.notPreceded".equals(violationKey)) {
+                return new InsertEdit(markerStartOffset, " ");
+            } else if ("ws.preceded".equals(violationKey)) {
+                final int tokenLength = measureTokenBackwards(string, fromStartOfLine - 1, Character::isWhitespace);
+                if (tokenLength > 0) {
+                    return new DeleteEdit(markerStartOffset - tokenLength, tokenLength);
+                }
             }
 
             return null;

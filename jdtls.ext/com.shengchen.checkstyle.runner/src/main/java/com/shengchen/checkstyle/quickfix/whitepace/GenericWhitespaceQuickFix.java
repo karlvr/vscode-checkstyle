@@ -22,13 +22,15 @@ import com.shengchen.checkstyle.quickfix.BaseEditQuickFix;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.InsertEdit;
-import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
 
-public class WhitespaceAroundQuickFix extends BaseEditQuickFix {
-
-    private static final String OPERATORS = "-=!&|^<>";
+/**
+ * Quick fix for
+ * https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/checks/whitespace/GenericWhitespaceCheck.html
+ */
+public class GenericWhitespaceQuickFix extends BaseEditQuickFix {
 
     @Override
     public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, String violationKey, Document doc) {
@@ -36,30 +38,20 @@ public class WhitespaceAroundQuickFix extends BaseEditQuickFix {
             final int fromStartOfLine = markerStartOffset - lineInfo.getOffset();
             final String string = doc.get(lineInfo.getOffset(), lineInfo.getLength());
             
-            final char marker = string.charAt(fromStartOfLine);
-            final int tokenLength;
-
-            if (marker == '{' || marker == '}') {
-                tokenLength = 1;
-            } else if (OPERATORS.indexOf(marker) != -1) {
-                tokenLength = measureToken(string, fromStartOfLine, c -> OPERATORS.indexOf(c) != -1);
-            } else if (Character.isLetter(marker)) {
-                /* Literal if, else, while, do, for */
-                tokenLength = measureToken(string, fromStartOfLine, Character::isLetter);
-            } else {
-                tokenLength = 0;
-            }
-
-            if (tokenLength > 0) {
-                final MultiTextEdit result = new MultiTextEdit();
-                if (fromStartOfLine > 0 && !Character.isWhitespace(string.charAt(fromStartOfLine - 1))) {
-                    result.addChild(new InsertEdit(lineInfo.getOffset() + fromStartOfLine, " "));
+            if ("ws.illegalFollow".equals(violationKey)) {
+                return new InsertEdit(markerStartOffset + 1, " ");
+            } else if ("ws.notPreceded".equals(violationKey)) {
+                return new InsertEdit(markerStartOffset, " ");
+            } else if ("ws.followed".equals(violationKey)) {
+                final int tokenLength = measureToken(string, fromStartOfLine + 1, Character::isWhitespace);
+                if (tokenLength > 0) {
+                    return new DeleteEdit(markerStartOffset + 1, tokenLength);
                 }
-                if (fromStartOfLine + tokenLength < string.length() && 
-                    !Character.isWhitespace(string.charAt(fromStartOfLine + tokenLength))) {
-                    result.addChild(new InsertEdit(lineInfo.getOffset() + fromStartOfLine + tokenLength, " "));
+            } else if ("ws.preceded".equals(violationKey)) {
+                final int tokenLength = measureTokenBackwards(string, fromStartOfLine - 1, Character::isWhitespace);
+                if (tokenLength > 0) {
+                    return new DeleteEdit(markerStartOffset - tokenLength, tokenLength);
                 }
-                return result;
             }
 
             return null;

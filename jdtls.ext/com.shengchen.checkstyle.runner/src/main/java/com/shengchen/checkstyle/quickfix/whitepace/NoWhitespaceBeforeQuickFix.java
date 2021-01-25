@@ -25,12 +25,10 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.TextEdit;
 
-import java.util.function.Predicate;
-
 public class NoWhitespaceBeforeQuickFix extends BaseEditQuickFix {
 
     @Override
-    public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, Document doc) {
+    public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, String violationKey, Document doc) {
         try {
             final int fromStartOfLine = markerStartOffset - lineInfo.getOffset();
             /* Marker is first non-whitespace character after the problem */
@@ -45,16 +43,6 @@ public class NoWhitespaceBeforeQuickFix extends BaseEditQuickFix {
         } catch (BadLocationException e) {
             return null;
         }
-    }
-
-    private int measureTokenBackwards(String string, Predicate<Character> tokenPredicate) {
-        final int n = string.length();
-        for (int i = n - 1; i >= 0; i--) {
-            if (!tokenPredicate.test(string.charAt(i))) {
-                return n - 1 - i;
-            }
-        }
-        return n;
     }
 
 }

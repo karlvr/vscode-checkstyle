@@ -38,6 +38,8 @@ import com.shengchen.checkstyle.quickfix.misc.UpperEllQuickFix;
 import com.shengchen.checkstyle.quickfix.modifier.ModifierOrderQuickFix;
 import com.shengchen.checkstyle.quickfix.modifier.RedundantModifierQuickFix;
 import com.shengchen.checkstyle.quickfix.utils.EditUtils;
+import com.shengchen.checkstyle.quickfix.whitepace.GenericWhitespaceQuickFix;
+import com.shengchen.checkstyle.quickfix.whitepace.MethodParamPadQuickFix;
 import com.shengchen.checkstyle.quickfix.whitepace.NewlineAtEndOfFileQuickFix;
 import com.shengchen.checkstyle.quickfix.whitepace.NoWhitespaceAfterQuickFix;
 import com.shengchen.checkstyle.quickfix.whitepace.NoWhitespaceBeforeQuickFix;
@@ -102,6 +104,8 @@ public class QuickFixService implements IQuickFixService {
         quickFixMap.put(FixableCheck.NO_WHITESPACE_AFTER_CHECK.toString(), new NoWhitespaceAfterQuickFix());
         quickFixMap.put(FixableCheck.NO_WHITESPACE_BEFORE_CHECK.toString(), new NoWhitespaceBeforeQuickFix());
         quickFixMap.put(FixableCheck.NEWLINE_AT_END_OF_FILE_CHECK.toString(), new NewlineAtEndOfFileQuickFix());
+        quickFixMap.put(FixableCheck.GENERIC_WHITESPACE_CHECK.toString(), new GenericWhitespaceQuickFix());
+        quickFixMap.put(FixableCheck.METHOD_PARAM_PAD_CHECK.toString(), new MethodParamPadQuickFix());
     }
 
     public IQuickFix getQuickFix(String sourceName) {
@@ -111,7 +115,8 @@ public class QuickFixService implements IQuickFixService {
     public WorkspaceEdit quickFix(
         String fileToCheckUri,
         List<Double> offsets,
-        List<String> sourceNames
+        List<String> sourceNames,
+        List<String> violationKeys
     ) throws JavaModelException, IllegalArgumentException, BadLocationException {
         final ICompilationUnit unit = JDTUtils.resolveCompilationUnit(fileToCheckUri);
         final Document document = new Document(unit.getSource());
@@ -127,24 +132,38 @@ public class QuickFixService implements IQuickFixService {
             final int offset = offsets.get(i).intValue();
             final IRegion lineInfo = document.getLineInformationOfOffset(offset);
             final IQuickFix quickFix = getQuickFix(sourceNames.get(i));
+            final String violationKey = violationKeys.get(i);
             if (quickFix instanceof BaseQuickFix) {
                 astRoot.accept(((BaseQuickFix) quickFix).getCorrectingASTVisitor(lineInfo, offset));
             } else if (quickFix instanceof BaseEditQuickFix) {
-                final TextEdit edit = ((BaseEditQuickFix) quickFix).createTextEdit(lineInfo, offset, document);
+                final TextEdit edit = ((BaseEditQuickFix) quickFix).createTextEdit(
+                    lineInfo, offset, violationKey, document);
                 if (edit != null) {
                     addAllEdits(edit, textEdits);
                 }
             }
         }
 
-        final MultiTextEdit result = (MultiTextEdit) astRoot.rewrite(document, null);
-        for (final TextEdit anotherEdit : textEdits) {
+        /* Add text edits before AST edits, as whitespace changes need to be applied first */
+        final MultiTextEdit result = new MultiTextEdit();
+        for (final TextEdit textEdit : textEdits) {
             try {
-                result.addChild(anotherEdit.copy());
+                result.addChild(textEdit.copy());
             } catch (MalformedTreeException e) {
-                /* Ignore text edits that can't be added; it is due to conflicts with an AST edit */
+                /* Ignore text edits that can't be added; it is due to conflicts */
             }
         }
+
+        final MultiTextEdit astEdits = (MultiTextEdit) astRoot.rewrite(document, null);
+        while (astEdits.getChildrenSize() > 0) {
+            final TextEdit astEdit = astEdits.removeChild(0);
+            try {
+                result.addChild(astEdit);
+            } catch (MalformedTreeException e) {
+                /* Ignore text edits that can't be added; it is due to conflicts */
+            }
+        }
+
         return EditUtils.convertToWorkspaceEdit(unit, result);
     }
 

@@ -25,12 +25,10 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.TextEdit;
 
-import java.util.function.Predicate;
-
 public class WhitespaceAfterQuickFix extends BaseEditQuickFix {
 
     @Override
-    public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, Document doc) {
+    public TextEdit createTextEdit(IRegion lineInfo, int markerStartOffset, String violationKey, Document doc) {
         try {
             final int fromStartOfLine = markerStartOffset - lineInfo.getOffset();
             final String string = doc.get(markerStartOffset, lineInfo.getLength() - fromStartOfLine);
@@ -52,16 +50,6 @@ public class WhitespaceAfterQuickFix extends BaseEditQuickFix {
         } catch (BadLocationException e) {
             return null;
         }
-    }
-
-    private int measureToken(String string, Predicate<Character> tokenPredicate) {
-        final int n = string.length();
-        for (int i = 0; i < n; i++) {
-            if (!tokenPredicate.test(string.charAt(i))) {
-                return i;
-            }
-        }
-        return n;
     }
 
 }
